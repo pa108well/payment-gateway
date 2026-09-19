@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#f5f5f7">
+    <title>Payment Studio</title>
+    <link rel="icon"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%231d1d1f'/%3E%3Cpath d='M12 12h10a7 7 0 0 1 0 14h-5v5h-5zm5 5v4h5a2 2 0 0 0 0-4z' fill='white'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" defer></script>
+</head>
+<body>
+<main>
+    <section class="metrics" aria-label="Latest 100 payments">
+        <div><span>Payments <small>latest 100</small></span><strong id="total">0</strong></div>
+        <div><span><i class="metric-dot green"></i>Succeeded</span><strong id="succeeded">0</strong></div>
+        <div><span><i class="metric-dot amber"></i>In progress</span><strong id="pending">0</strong></div>
+        <div><span><i class="metric-dot red"></i>Failed</span><strong id="failed">0</strong></div>
+    </section>
+    <div class="workspace">
+        <section class="panel composer">
+            <div class="section-heading">
+                <div><p class="eyebrow">01 / CREATE</p>
+                    <h2>New deposit</h2></div>
+                <span class="small-icon">↗</span></div>
+            <form id="deposit-form">
+                <div class="field-row"><label>Merchant ID<input id="merchant" value="M001" maxlength="64"
+                                                                required></label><label>Order ID<input id="order"
+                                                                                                       value="ORD-1001"
+                                                                                                       maxlength="128"
+                                                                                                       required></label>
+                </div>
+                <div class="field-row amount-row"><label>Amount<input id="amount" type="number" value="100.50"
+                                                                      min="0.01" max="999999999.99" step="0.01"
+                                                                      required></label><label>Currency<select
+                        id="currency" aria-label="Currency">
+                    <option>EUR</option>
+                    <option>USD</option>
+                    <option>GBP</option>
+                </select></label></div>
+                <div class="payment-method"><span class="card-icon">▰</span>
+                    <div>Card payment<small>Mock payment method</small></div>
+                    <span class="check">✓</span></div>
+                <div class="key-label"><label for="key">Idempotency key</label>
+                    <button type="button" class="text-button" id="new-key">Generate new ↻</button>
+                    <input id="key" maxlength="128" required spellcheck="false"></div>
+                <div class="scenario-box"><label>Provider scenario<select id="scenario"
+                                                                          aria-label="Provider scenario"></select></label>
+                    <div class="scenario-description"><span id="scenario-badge" class="badge success">Success</span>
+                        <p id="scenario-description"></p></div>
+                </div>
+                <button class="primary" type="submit" id="create-button">Create deposit <span>↗</span></button>
+                <p class="form-footnote">Same key, same payment. Always.</p></form>
+            <div class="experiments"><p class="eyebrow">PUT IT TO THE TEST</p>
+                <div class="experiment-grid">
+                    <button type="button" id="repeat">↻ Repeat request</button>
+                    <button type="button" id="concurrent">⇉ Send concurrently</button>
+                    <button type="button" id="conflict">≠ Key conflict</button>
+                    <button type="button" id="invalid">! Invalid amount</button>
+                </div>
+                <p>Repeat & conflict use your last submitted request. Concurrent sends a fresh key twice.</p></div>
+        </section>
+        <section class="panel activity">
+            <div class="section-heading">
+                <div><p class="eyebrow">02 / OBSERVE</p>
+                    <h2>Payment activity</h2></div>
+                <button class="icon-button" id="refresh" aria-label="Refresh payments">↻</button>
+            </div>
+            <div class="activity-tools">
+                <div class="segmented" aria-label="Filter payments">
+                    <button class="active" data-filter="ALL">All</button>
+                    <button data-filter="SUCCESS">Succeeded</button>
+                    <button data-filter="ACTIVE">In progress</button>
+                    <button data-filter="FAILED">Failed</button>
+                </div>
+                <input id="search" type="search" placeholder="Find order or transaction…"
+                       aria-label="Find order or transaction"></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th class="attempt-col">Attempts</th>
+                    </tr>
+                    </thead>
+                    <tbody id="payments"></tbody>
+                </table>
+                <div id="empty" class="empty">
+                    <div class="empty-icon">↗</div>
+                    <h3>A clean slate.</h3>
+                    <p>Your payments will appear here.<br>Start with a successful deposit.</p></div>
+            </div>
+            <div class="activity-footer"><span id="list-count">0 payments</span><span><i class="dot"></i> Updates automatically</span>
+            </div>
+        </section>
+    </div>
+    <section class="panel inspector" id="inspector">
+        <div class="section-heading">
+            <div><p class="eyebrow">03 / UNDERSTAND</p>
+                <h2 id="detail-title" hidden></h2></div>
+            <span id="detail-status"></span></div>
+        <div id="detail-empty" class="detail-empty">Select a payment to explore its journey and send a webhook.</div>
+        <div id="detail-content" hidden>
+            <div class="detail-grid">
+                <div>
+                    <dl class="detail-meta" id="detail-meta"></dl>
+                    <div class="webhook-box"><label>Webhook status<select id="webhook-status"
+                                                                          aria-label="Webhook status">
+                        <option>SUCCESS</option>
+                        <option>FAILED</option>
+                        <option>PENDING</option>
+                    </select></label>
+                        <button class="secondary" id="webhook">Send webhook ↗</button>
+                    </div>
+                    <p class="helper">Send twice to check deduplication. Choose a different final status to check
+                        transition protection.</p></div>
+                <ol class="timeline" id="timeline"></ol>
+            </div>
+        </div>
+    </section>
+    <section class="panel response-panel">
+        <div class="section-heading">
+            <div><p class="eyebrow">REQUEST CONSOLE</p></div>
+            <button class="text-button" id="clear-log">Clear</button>
+        </div>
+        <div id="responses" aria-live="polite"><p class="helper">HTTP responses appear here when you run a scenario.</p>
+        </div>
+    </section>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/payments}
+    username: ${DATABASE_USER:payments}
+    password: ${DATABASE_PASSWORD:payments}
+    hikari:
+      connection-timeout: 3000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+payment:
+  max-attempts: 3
+  retry-delay: 3s
+  recovery-delay: 3s
+  lease-duration: 15s
+  provider-timeout: 800ms
+  worker-delay-ms: 1000
+  worker-enabled: true
